@@ -1,6 +1,18 @@
 import Image from "next/image";
+import { type SanityDocument } from "next-sanity";
+import { client } from "./sanity/client";
+import Link from "next/link";
 
-export default function Home() {
+  const POSTS_QUERY = `*[
+  _type == "post"
+  && defined(slug.current)
+]|order(publishedAt desc)[0...12]{_id, title, image, slug, publishedAt}`;
+
+export default async function Home() {
+
+  const options = { next: { revalidate: 30 } };
+  const posts = await client.fetch<SanityDocument[]>(POSTS_QUERY, {}, options);
+console.log(posts)
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
@@ -22,6 +34,17 @@ export default function Home() {
           </li>
           <li>Save and see your changes instantly.</li>
         </ol>
+
+        <ul className="flex flex-col gap-y-4">
+          {posts.map((post) => (
+            <li className="hover:underline" key={post._id}>
+              <Link href={`/${post.slug.current}`}>
+                <h2 className="text-xl font-semibold">{post.title}</h2>
+                <p>{new Date(post.publishedAt).toLocaleDateString()}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a
